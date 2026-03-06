@@ -17,6 +17,12 @@ global:
   # No Jito on devnet
   useJito: false
 
+  # Only load our markets (not Drift's full devnet config)
+  perpMarketsToLoad:
+    - 0
+  spotMarketsToLoad:
+    - 0
+
   # Priority fees
   priorityFeeMethod: solana
   maxPriorityFeeMicroLamports: 10000
