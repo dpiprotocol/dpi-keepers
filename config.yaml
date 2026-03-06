@@ -28,8 +28,7 @@ global:
   maxPriorityFeeMicroLamports: 10000
 
 enabledBots:
-  # filler requires Pyth Lazer on devnet — disabled for now
-  # - filler
+  - filler
   # Triggers conditional orders (stop-loss, take-profit)
   - trigger
   # Liquidates undercollateralized positions

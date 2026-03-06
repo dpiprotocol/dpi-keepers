@@ -369,12 +369,9 @@ export class FillerBot extends TxThreaded implements Bot {
 
 		this.signerPubkey = this.driftClient.wallet.publicKey.toBase58();
 
-		// Pyth lazer: remember to remove devnet guard
-		if (this.globalConfig.driftEnv == 'devnet') {
-			if (!this.globalConfig.lazerEndpoints || !this.globalConfig.lazerToken) {
-				throw new Error('Missing lazerEndpoint or lazerToken in global config');
-			}
-
+		// Pyth Lazer — only initialize if credentials are provided.
+		// DPI uses Switchboard, so this is optional.
+		if (this.globalConfig.lazerEndpoints && this.globalConfig.lazerToken) {
 			const markets = PerpMarkets[this.globalConfig.driftEnv!].filter(
 				(market) =>
 					market.pythLazerId !== undefined &&
