@@ -52,7 +52,7 @@ botConfigs:
   trigger:
     botId: "trigger"
     dryRun: false
-    metricsPort: 9464
+    metricsPort: 9468
 
   liquidator:
     botId: "liquidator"
