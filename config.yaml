@@ -52,7 +52,7 @@ botConfigs:
   liquidator:
     botId: "liquidator"
     dryRun: false
-    metricsPort: 9464
+    metricsPort: 9465
     disableAutoDerisking: false
     maxSlippageBps: 50
     deriskAuctionDurationSlots: 100
@@ -61,12 +61,12 @@ botConfigs:
   fundingRateUpdater:
     botId: "funding-rate-updater"
     dryRun: false
-    metricsPort: 9464
+    metricsPort: 9466
 
   userPnlSettler:
     botId: "user-pnl-settler"
     dryRun: false
-    metricsPort: 9464
+    metricsPort: 9467
     settlePnlThresholdUsdc: 100
     maxUsersToConsider: 50
 
