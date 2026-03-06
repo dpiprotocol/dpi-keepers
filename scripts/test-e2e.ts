@@ -7,6 +7,9 @@ import {
 	Keypair,
 	PublicKey,
 	LAMPORTS_PER_SOL,
+	SystemProgram,
+	Transaction,
+	sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import { Wallet } from '@drift-labs/sdk';
 import {
@@ -30,8 +33,10 @@ const RPC_URL = 'https://api.devnet.solana.com';
 const USDC_MINT = new PublicKey('8zGuJQqwhZafTah7Uc7Z4tXRnguqkn5KLFAP8oV6PHe2');
 const TOKEN_FAUCET_PROGRAM_ID = new PublicKey('V4v1mQiAdLz4qwckEb45WqHYceYizoib39cDBHSWfaB');
 const KEYPAIR_DIR = path.resolve(__dirname, '../test-wallets');
+const ADMIN_KEYPAIR_PATH = process.env.ADMIN_KEYPAIR_PATH || '/root/dpi-protocol/target/deploy/admin-keypair.json';
 
 const PERP_MARKET_INDEX = 0;
+const SOL_PER_WALLET = 0.3;
 const DEPOSIT_AMOUNT_USDC = 1000; // $1000 USDC each
 const ORDER_SIZE_BASE = 0.1; // 0.1 units
 
@@ -47,25 +52,34 @@ function loadOrCreateKeypair(name: string): Keypair {
 	return kp;
 }
 
-async function airdropSol(
+function loadAdminKeypair(): Keypair {
+	const data = JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, 'utf-8'));
+	return Keypair.fromSecretKey(Uint8Array.from(data));
+}
+
+async function fundFromAdmin(
 	connection: Connection,
-	pubkey: PublicKey,
-	amount: number
+	admin: Keypair,
+	recipient: PublicKey,
+	solAmount: number
 ) {
-	const balance = await connection.getBalance(pubkey);
-	if (balance >= amount * LAMPORTS_PER_SOL) {
+	const balance = await connection.getBalance(recipient);
+	if (balance >= solAmount * LAMPORTS_PER_SOL) {
 		console.log(
-			`  ${pubkey.toBase58().slice(0, 8)}... already has ${(balance / LAMPORTS_PER_SOL).toFixed(2)} SOL`
+			`  ${recipient.toBase58().slice(0, 8)}... already has ${(balance / LAMPORTS_PER_SOL).toFixed(2)} SOL`
 		);
 		return;
 	}
-	console.log(`  Airdropping ${amount} SOL to ${pubkey.toBase58().slice(0, 8)}...`);
-	const sig = await connection.requestAirdrop(
-		pubkey,
-		amount * LAMPORTS_PER_SOL
+	console.log(`  Sending ${solAmount} SOL to ${recipient.toBase58().slice(0, 8)}...`);
+	const tx = new Transaction().add(
+		SystemProgram.transfer({
+			fromPubkey: admin.publicKey,
+			toPubkey: recipient,
+			lamports: Math.floor(solAmount * LAMPORTS_PER_SOL),
+		})
 	);
-	await connection.confirmTransaction(sig, 'confirmed');
-	console.log(`  Airdrop confirmed: ${sig.slice(0, 20)}...`);
+	const sig = await sendAndConfirmTransaction(connection, tx, [admin]);
+	console.log(`  Transfer tx: ${sig.slice(0, 20)}...`);
 }
 
 async function mintDevnetUsdc(
@@ -119,18 +133,23 @@ async function main() {
 		overrideEnv: { DRIFT_PROGRAM_ID: PROGRAM_ID },
 	});
 
-	// Step 1: Load/create test wallets
-	console.log('Step 1: Loading test wallets...');
+	// Step 1: Load admin + test wallets
+	console.log('Step 1: Loading wallets...');
+	const admin = loadAdminKeypair();
+	console.log(`  Admin:            ${admin.publicKey.toBase58()}`);
+	const adminBal = await connection.getBalance(admin.publicKey);
+	console.log(`  Admin balance:    ${(adminBal / LAMPORTS_PER_SOL).toFixed(2)} SOL`);
+
 	const traderA = loadOrCreateKeypair('test-trader-a');
 	const traderB = loadOrCreateKeypair('test-trader-b');
 	console.log(`  Trader A (LONG):  ${traderA.publicKey.toBase58()}`);
 	console.log(`  Trader B (SHORT): ${traderB.publicKey.toBase58()}`);
 
-	// Step 2: Fund with SOL
-	console.log('\nStep 2: Funding SOL...');
-	await airdropSol(connection, traderA.publicKey, 2);
+	// Step 2: Fund with SOL from admin
+	console.log(`\nStep 2: Funding ${SOL_PER_WALLET} SOL each from admin...`);
+	await fundFromAdmin(connection, admin, traderA.publicKey, SOL_PER_WALLET);
 	await sleep(1000);
-	await airdropSol(connection, traderB.publicKey, 2);
+	await fundFromAdmin(connection, admin, traderB.publicKey, SOL_PER_WALLET);
 
 	// Step 3: Mint devnet USDC
 	console.log('\nStep 3: Minting devnet USDC...');
