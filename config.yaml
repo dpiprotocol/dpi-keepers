@@ -1,0 +1,79 @@
+global:
+  driftEnv: devnet
+  endpoint: https://api.devnet.solana.com
+  # Loaded from KEEPER_PRIVATE_KEY env var (set in .env)
+  # Can be a file path or comma-separated byte array
+  keeperPrivateKey:
+  initUser: true
+  websocket: true
+  runOnce: false
+  debug: true
+  subaccounts:
+    - 0
+
+  eventSubscriberPollingInterval: 5000
+  bulkAccountLoaderPollingInterval: 5000
+
+  # No Jito on devnet
+  useJito: false
+
+  # Priority fees
+  priorityFeeMethod: solana
+  maxPriorityFeeMicroLamports: 10000
+
+enabledBots:
+  # Fills (matches) orders on the orderbook
+  - filler
+  # Triggers conditional orders (stop-loss, take-profit)
+  - trigger
+  # Liquidates undercollateralized positions
+  - liquidator
+  # Updates funding rates on perp markets
+  - fundingRateUpdater
+  # Settles PnL for users
+  - userPnlSettler
+  # Pushes Switchboard oracle prices on-chain
+  - switchboardCranker
+
+botConfigs:
+  filler:
+    botId: "filler"
+    dryRun: false
+    fillerPollingInterval: 6000
+    metricsPort: 9464
+    revertOnFailure: true
+    simulateTxForCUEstimate: true
+
+  trigger:
+    botId: "trigger"
+    dryRun: false
+    metricsPort: 9464
+
+  liquidator:
+    botId: "liquidator"
+    dryRun: false
+    metricsPort: 9464
+    disableAutoDerisking: false
+    maxSlippageBps: 50
+    deriskAuctionDurationSlots: 100
+    notifyOnLiquidation: false
+
+  fundingRateUpdater:
+    botId: "funding-rate-updater"
+    dryRun: false
+    metricsPort: 9464
+
+  userPnlSettler:
+    botId: "user-pnl-settler"
+    dryRun: false
+    metricsPort: 9464
+    settlePnlThresholdUsdc: 100
+    maxUsersToConsider: 50
+
+  switchboardCranker:
+    botId: "switchboard-cranker"
+    dryRun: false
+    intervalMs: 10000
+    pullFeedConfigs:
+      DPI:
+        pubkey: "8e3LKcy7goHzizJqn4SbaiE5RBebTechKzK6sGqN7gEf"

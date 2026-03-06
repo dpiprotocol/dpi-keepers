@@ -233,8 +233,15 @@ logger.info(
 	)}`
 );
 
+// Override SDK config with DPI Protocol program ID
+const DPI_PROGRAM_ID = 'LYQNV5cgGq8rCRAxFk9QDc2kQ3dDMWoPdcrx4vsSGuw';
 // @ts-ignore
-const sdkConfig = initialize({ env: config.global.driftEnv });
+const sdkConfig = initialize({
+	env: config.global.driftEnv,
+	overrideEnv: {
+		DRIFT_PROGRAM_ID: DPI_PROGRAM_ID,
+	},
+});
 const agent = new Agent({
 	connections: 200,
 	allowH2: false,
